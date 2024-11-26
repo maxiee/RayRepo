@@ -42,7 +42,14 @@ def update_git_submodules():
         subprocess.run(["git", "pull"], check=True)
         print("Pulling submodules")
         subprocess.run(
-            ["git", "submodule", "update", "--init", "--recursive"],
+            [
+                "git",
+                "submodule",
+                "update",
+                "--init",
+                "--recursive",
+                "--remote",
+            ],
             check=True,
         )
         subprocess.run(
@@ -56,6 +63,8 @@ def update_git_submodules():
             check=True,
         )
         print("Updated git submodules")
+        git_push_if_needed()
+        print("Pushed changes to remote")
     except subprocess.CalledProcessError as e:
         print(f"Failed to update git submodules: {e}")
         sys.exit(1)
@@ -95,6 +104,30 @@ def git_clone(repo_url, local_path):
         print(f"Cloned git repository: {repo_url}")
     except subprocess.CalledProcessError as e:
         print(f"Failed to clone git repository: {e}")
+        sys.exit(1)
+
+
+def git_push_if_needed():
+    """
+    Push changes to remote if needed
+    """
+    try:
+        change_cwd_to_code_path()
+        # Check if there are any changes
+        result = subprocess.run(
+            ["git", "status", "--porcelain"],
+            capture_output=True,
+            text=True,
+        )
+        if result.stdout:
+            print("Changes detected, pushing to remote")
+            subprocess.run(["git", "add", "."], check=True)
+            subprocess.run(["git", "commit", "-m", "Update"], check=True)
+            subprocess.run(["git", "push"], check=True)
+        else:
+            print("No changes detected")
+    except subprocess.CalledProcessError as e:
+        print(f"Failed to push changes to remote: {e}")
         sys.exit(1)
 
 
